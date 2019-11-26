@@ -57,7 +57,7 @@ class speedy {
 
 	static String[] name;         /* name of the offender */
 	static int[]    licence;      /* time licence held in years */
-	static int[]    fine;         /* total raw fine in local currancy */
+	static int[]    fine;         /* total raw fine in local currency */
 	static int[]    points;       /* total penalty points */
 	static int[][]  classOffence; /* number of offences in each speed class */
 
@@ -311,7 +311,7 @@ class speedy {
 			String header = " " + i + " ";
 
 			drawline     (xp, y, 0, blockW);
-			drawstring   (xp + blockW/2 - 1, y, header);
+			drawstring   (xp + (blockW >> 1) - 1, y, header);
 			drawoffender (xp, y + 1, blockW - 1, i);
 
 			xp += blockW + 1;
@@ -594,7 +594,7 @@ class speedy {
 
 		int c = 0;
 		do {
-			for (int i = 0; i < 4; ++i) {
+			for (int i = 0; i < 2; ++i) {
 				for (int r = 0; r < SCREENH; ++r) {
 					int idx = r * SCREENW + c;
 					frameBuffer[0][idx] = frameBuffer[1][idx]; }
@@ -613,7 +613,6 @@ class speedy {
 	static void
 	init () {
 		/* why would you want static arrays? go back to 1970 */
-
 		name         = new String[MAXOFFENDER];
 		licence      = new int   [MAXOFFENDER];
 		fine         = new int   [MAXOFFENDER];
@@ -706,8 +705,14 @@ class speedy {
 	///
 
 	static int
+	abs (int i) {
+		int mask = i >> 31;
+		i = (i + mask) ^ mask;
+		return i; }
+
+	static int
 	atoi (String a) {
-		/* this implementation of atoi returns the absolute value.
+		/* this implementation of atoi returns the absolute value*
 		 * convenient since we don't want negative numbers here */
 
 		/* skip leading whitespace */
@@ -734,7 +739,10 @@ class speedy {
 			i *= 10;
 			i += c - 0x30; }
 
-		return i; }
+		/* *: atoi _does_ create an absolute value. but i forgot that since we
+		 * return a signed value, since unsigned integers are the devils work,
+		 * we could still return a negative value */
+		return abs (i); }
 
 	static void
 	write (int fd, String s) {
