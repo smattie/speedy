@@ -506,7 +506,7 @@ class speedy {
 			return -1; }
 
 		int idx = atoi (tmp);
-		if (idx > nOffender || idx < 0) {
+		if (idx >= nOffender || idx < 0) {
 			lastMsg = "invalid value";
 			return 0; }
 
