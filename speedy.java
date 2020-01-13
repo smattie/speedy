@@ -26,7 +26,12 @@ class speedy {
 	static final int LISTX = MENUX + MENUW + 3;
 	static final int LISTY = MENUY;
 	static final int LISTW = SCREENW - LISTX - 4;
-	static final int LISTH = SCREENH - LISTY - 3;
+	static final int LISTH = SCREENH - LISTY - 3 - 5;
+
+	static final int MSGX = LISTX;
+	static final int MSGY = LISTY + LISTH + 2;
+	static final int MSGW = LISTW;
+	static final int MSGH = 3;
 
 	static final int MAXINPUTBUF = 64;
 
@@ -40,10 +45,9 @@ class speedy {
 	static final int[] speedPoints    = {  0,   6,   6,   3,  3,   0,  0 };
 
 	static final String[] quote = {
-		"i _am_ the law",                                              "cops",
+		"i *am* the law",                                              "cops",
 		"go on, judge! shit on 'em!",                                  "jury",
 		"we're going downtown gonna beat up the drunks",               "jello",
-		"NWA said 'fuck the police' - now i'm in jail",                "bizarre",
 		"who the hell needs a bill of rights? i'm bill and i'm right", "ol' bill",
 		"<inspirational quote>",                                       "the developer" };
 
@@ -69,6 +73,7 @@ class speedy {
 	static int demoIdx;
 
 	static Scanner input;
+	static String lastMsg;
 
 	////////////////////////////////////////////////////////////////
 	///
@@ -417,12 +422,14 @@ class speedy {
 				break;
 
 			case as_menu:
+				lastMsg = "";
 				write (1, "option >> ");
 				switch (getinput().charAt(0)) {
 					case 'n': __addState = as_name;    break;
 					case 'l': __addState = as_licence; break;
 					case 'o': __addState = as_speed;   break;
-					case 'q': __addState = as_quit;    break; }
+					case 'q': __addState = as_quit;    break;
+					default : lastMsg = "invalid option"; break; }
 
 				break;
 
@@ -439,7 +446,13 @@ class speedy {
 				write (1, "licence (years) >> ");
 				tmp = getinput ();
 				if (tmp.charAt(0) != '\n') {
-					licence[offender] = atoi (tmp); }
+					int v = atoi (tmp);
+					if (v < 0 || v > 1024) {
+						lastMsg = "invalid value";
+						return 0; }
+
+					lastMsg = "";
+					licence[offender] = v; }
 
 				__addState = as_menu;
 				break;
@@ -453,12 +466,19 @@ class speedy {
 					clearoffences (offender);
 					break; }
 
-				speedClass = getspeedclass (atoi (tmp));
-				if (speedClass >= 0) {
-					fine  [offender] += speedFine  [speedClass];
-					points[offender] += speedPoints[speedClass];
+				else {
+					int v = atoi (tmp);
+					if (v < 0 || v > 1024) {
+						lastMsg = "invalid value";
+						return 0; }
 
-					classOffence[offender][speedClass]++; }
+					lastMsg = "";
+					speedClass = getspeedclass (v);
+					if (speedClass >= 0) {
+						fine  [offender] += speedFine  [speedClass];
+						points[offender] += speedPoints[speedClass];
+
+						classOffence[offender][speedClass]++; }}
 
 				__addState = as_menu;
 				break;
@@ -477,10 +497,8 @@ class speedy {
 		if (nOffender <= 0) {
 			return -1; }
 
-		drawbox       (MENUX,   MENUY,   MENUW,   MENUH);
-		drawtotals    (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
-		drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
-		blit          ();
+		drawbox (MENUX, MENUY, MENUW, MENUH);
+		blit ();
 
 		write (1, "delete which? (0 - " + (nOffender-1) + ") >> ");
 		String tmp = getinput ();
@@ -488,20 +506,21 @@ class speedy {
 			return -1; }
 
 		int idx = atoi (tmp);
-		if (idx < nOffender) {
-			for (int i = idx + 1; i < nOffender; ++i) {
-				name   [i - 1] = name   [i];
-				fine   [i - 1] = fine   [i];
-				points [i - 1] = points [i];
-				licence[i - 1] = licence[i];
+		if (idx > nOffender || idx < 0) {
+			lastMsg = "invalid value";
+			return 0; }
 
-				for (int j = 0; j < SPEEDCLASSES; ++j) {
-					classOffence[i - 1][j] = classOffence[i][j]; }}
+		for (int i = idx + 1; i < nOffender; ++i) {
+			name   [i - 1] = name   [i];
+			fine   [i - 1] = fine   [i];
+			points [i - 1] = points [i];
+			licence[i - 1] = licence[i];
 
-			nOffender--;
-			return -1; }
+			for (int j = 0; j < SPEEDCLASSES; ++j) {
+				classOffence[i - 1][j] = classOffence[i][j]; }}
 
-		return 0; }
+		nOffender--;
+		return -1; }
 
 	static int
 	drawmainmenu () {
@@ -545,6 +564,8 @@ class speedy {
 		int totalsh = 0;
 		int listw   = 0;
 		int listh   = 0;
+		int msgw   = 0;
+		int msgh   = 0;
 
 		/* first lerp in y */
 		float t = 0.f;
@@ -554,11 +575,13 @@ class speedy {
 			menuh   = lerp (0, MENUH,   t);
 			totalsh = lerp (0, TOTALSH, t);
 			listh   = lerp (0, LISTH,   t);
+			msgh    = lerp (0, MSGH,    t);
 
 			t += .1f;
 			drawbox (MENUX,   MENUY,   menuw,   menuh);
 			drawbox (TOTALSX, TOTALSY, totalsw, totalsh);
 			drawbox (LISTX,   LISTY,   listw,   listh);
+			drawbox (MSGX,    MSGY,    msgw,    msgh);
 
 			blit ();
 			sleep (33); }
@@ -571,11 +594,13 @@ class speedy {
 			menuw   = lerp (0, MENUW,   t);
 			totalsw = lerp (0, TOTALSW, t);
 			listw   = lerp (0, LISTW,   t);
+			msgw    = lerp (0, MSGW,    t);
 
 			t += .1f;
 			drawbox (MENUX,   MENUY,   menuw,   menuh);
 			drawbox (TOTALSX, TOTALSY, totalsw, totalsh);
 			drawbox (LISTX,   LISTY,   listw,   listh);
+			drawbox (MSGX,    MSGY,    msgw,    msgh);
 
 			blit ();
 			sleep (33); }
@@ -588,6 +613,7 @@ class speedy {
 		drawmainmenu ();
 		drawoffenders (LISTX, LISTY, LISTW, LISTH);
 		drawtotals (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
+		drawmsg (MSGX, MSGY, MSGW, MSGH);
 
 		/* and copy it a column at a time into the front buffer */
 		boundBuffer = 0;
@@ -634,6 +660,14 @@ class speedy {
 		/* get an even random number within the bounds of the quote array */
 		quoteIdx = (int)(Math.random() * quote.length) & ~1;
 
+		lastMsg = "";
+
+		return; }
+
+	static void
+	drawmsg (int x, int y, int w, int h) {
+		drawbox2 (x, y, w, h, "info");
+		drawstring (x + 2, y + 2, lastMsg);
 		return; }
 
 	public static void
@@ -646,11 +680,16 @@ class speedy {
 		final int ms_delete = 4;
 
 		int state = ms_boot;
+		state = ms_main;
 
 		init ();
 		for (;;) {
 			clear   ();
 			inspire (QUOTEX, QUOTEY);
+
+			drawtotals    (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
+			drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
+			drawmsg       (MSGX, MSGY, MSGW, MSGH);
 
 			switch (state) {
 				case ms_boot:
@@ -659,16 +698,16 @@ class speedy {
 					break;
 
 				case ms_main:
-					drawmainmenu  ();
-					drawtotals    (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
-					drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
-					blit          ();
+					drawmainmenu ();
+					blit         ();
 
+					lastMsg = "";
 					write (1, "option >> ");
 					switch (getinput().charAt(0)) {
 						case 'n': state = ms_add;    break;
 						case 'd': state = ms_delete; break;
-						case 'q': return; }
+						case 'q': return;
+						default : lastMsg = "invalid option"; break; }
 
 					break;
 
@@ -712,8 +751,9 @@ class speedy {
 
 	static int
 	atoi (String a) {
-		/* this implementation of atoi returns the absolute value*
-		 * convenient since we don't want negative numbers here */
+		/* this implementation of atoi returns the absolute value(*)
+		 * convenient since we don't want negative numbers here. but
+		 * now we return a negative on error */
 
 		/* skip leading whitespace */
 		int len   = a.length();
@@ -730,6 +770,13 @@ class speedy {
 
 			len--; }
 
+		/* BUG: input of '-' will return 0 */
+		if (len > 0) {
+			char c = a.charAt(start);
+			if (c < 0x30 || c > 0x39) {
+				/* input doesnt begin with a number */
+				return -1; }}
+
 		int i = 0;
 		while (len-- > 0) {
 			char c = a.charAt(start++);
@@ -739,7 +786,7 @@ class speedy {
 			i *= 10;
 			i += c - 0x30; }
 
-		/* *: atoi _does_ create an absolute value. but i forgot that since we
+		/* (*): atoi _does_ create an absolute value. but i forgot that since we
 		 * return a signed value, since unsigned integers are the devils work,
 		 * we could still return a negative value */
 		return abs (i); }
