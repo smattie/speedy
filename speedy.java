@@ -681,7 +681,6 @@ class speedy {
 		final int ms_delete = 4;
 
 		int state = ms_boot;
-		state = ms_main;
 
 		init ();
 		for (;;) {
