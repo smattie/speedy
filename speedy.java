@@ -498,6 +498,7 @@ class speedy {
 			return -1; }
 
 		drawbox (MENUX, MENUY, MENUW, MENUH);
+		drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
 		blit ();
 
 		write (1, "delete which? (0 - " + (nOffender-1) + ") >> ");
@@ -687,9 +688,8 @@ class speedy {
 			clear   ();
 			inspire (QUOTEX, QUOTEY);
 
-			drawtotals    (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
-			drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
-			drawmsg       (MSGX, MSGY, MSGW, MSGH);
+			drawtotals (TOTALSX, TOTALSY, TOTALSW, TOTALSH);
+			drawmsg    (MSGX, MSGY, MSGW, MSGH);
 
 			switch (state) {
 				case ms_boot:
@@ -698,8 +698,9 @@ class speedy {
 					break;
 
 				case ms_main:
-					drawmainmenu ();
-					blit         ();
+					drawmainmenu  ();
+					drawoffenders (LISTX,   LISTY,   LISTW,   LISTH);
+					blit          ();
 
 					lastMsg = "";
 					write (1, "option >> ");
